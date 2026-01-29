@@ -33,6 +33,7 @@ export default function TrackerSection() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCityModal, setShowCityModal] = useState(false);
   const [editingTodo, setEditingTodo] = useState<TodoItem | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
@@ -125,13 +126,37 @@ export default function TrackerSection() {
     return () => clearInterval(timer);
   }, []);
 
+  // Haversine formula for accurate distance calculation
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
   // Get user location and find nearest city
   useEffect(() => {
     const getUserLocation = async () => {
+      // Check if user has saved location preference
+      const savedCityId = localStorage.getItem('prayer-city-id');
+      const savedCityName = localStorage.getItem('prayer-city-name');
+      
+      if (savedCityId && savedCityName) {
+        setCityId(savedCityId);
+        setLocationName(savedCityName);
+        return;
+      }
+
       if ("geolocation" in navigator) {
         try {
           const position = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
               timeout: 10000,
               maximumAge: 0
             });
@@ -139,53 +164,68 @@ export default function TrackerSection() {
 
           const { latitude, longitude } = position.coords;
           
-          // Fetch list of cities from API
-          const response = await fetch('https://api.myquran.com/v2/sholat/kota/semua');
-          const data = await response.json();
+          // Major Indonesian cities with accurate coordinates
+          const cityCoords: { [key: string]: { lat: number; lon: number; id: string } } = {
+            "Bandung": { lat: -6.9175, lon: 107.6191, id: "1204" },
+            "Jakarta": { lat: -6.2088, lon: 106.8456, id: "1301" },
+            "Surabaya": { lat: -7.2575, lon: 112.7521, id: "1403" },
+            "Medan": { lat: 3.5952, lon: 98.6722, id: "0219" },
+            "Semarang": { lat: -6.9667, lon: 110.4167, id: "1308" },
+            "Makassar": { lat: -5.1477, lon: 119.4327, id: "1671" },
+            "Palembang": { lat: -2.9761, lon: 104.7754, id: "1601" },
+            "Tangerang": { lat: -6.1783, lon: 106.6319, id: "1371" },
+            "Depok": { lat: -6.4025, lon: 106.7942, id: "1277" },
+            "Bekasi": { lat: -6.2349, lon: 106.9896, id: "1275" },
+            "Bogor": { lat: -6.5950, lon: 106.7887, id: "1209" },
+            "Yogyakarta": { lat: -7.7956, lon: 110.3695, id: "1401" },
+            "Malang": { lat: -7.9797, lon: 112.6304, id: "1318" },
+            "Denpasar": { lat: -8.6705, lon: 115.2126, id: "1701" },
+            "Balikpapan": { lat: -1.2379, lon: 116.8529, id: "1601" }
+          };
           
-          if (data.status && data.data) {
-            // Find nearest city based on coordinates (simple distance calculation)
-            let nearestCity = { id: "1301", nama: "Jakarta" }; // Default
-            let minDistance = Infinity;
+          // First, try to get city name from reverse geocoding
+          try {
+            const geoResponse = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`
+            );
+            const geoData = await geoResponse.json();
+            const detectedCity = geoData.address?.city || geoData.address?.town || geoData.address?.village || "";
             
-            // Major Indonesian cities with approximate coordinates
-            const cityCoords: { [key: string]: { lat: number; lon: number; id: string } } = {
-              "Jakarta": { lat: -6.2088, lon: 106.8456, id: "1301" },
-              "Surabaya": { lat: -7.2575, lon: 112.7521, id: "1403" },
-              "Bandung": { lat: -6.9175, lon: 107.6191, id: "1204" },
-              "Medan": { lat: 3.5952, lon: 98.6722, id: "0219" },
-              "Semarang": { lat: -6.9667, lon: 110.4167, id: "1308" },
-              "Makassar": { lat: -5.1477, lon: 119.4327, id: "1671" },
-              "Palembang": { lat: -2.9761, lon: 104.7754, id: "1601" },
-              "Tangerang": { lat: -6.1783, lon: 106.6319, id: "1371" },
-              "Depok": { lat: -6.4025, lon: 106.7942, id: "1277" },
-              "Bekasi": { lat: -6.2349, lon: 106.9896, id: "1275" },
-              "Bogor": { lat: -6.5950, lon: 106.7887, id: "1209" },
-              "Yogyakarta": { lat: -7.7956, lon: 110.3695, id: "1401" },
-              "Malang": { lat: -7.9797, lon: 112.6304, id: "1318" },
-              "Denpasar": { lat: -8.6705, lon: 115.2126, id: "1701" },
-              "Balikpapan": { lat: -1.2379, lon: 116.8529, id: "1601" }
-            };
-            
-            // Calculate distance to each major city
+            // Check if detected city matches our supported cities
             for (const [cityName, coords] of Object.entries(cityCoords)) {
-              const distance = Math.sqrt(
-                Math.pow(latitude - coords.lat, 2) + 
-                Math.pow(longitude - coords.lon, 2)
-              );
-              
-              if (distance < minDistance) {
-                minDistance = distance;
-                nearestCity = { id: coords.id, nama: cityName };
+              if (detectedCity.toLowerCase().includes(cityName.toLowerCase()) || 
+                  cityName.toLowerCase().includes(detectedCity.toLowerCase())) {
+                setCityId(coords.id);
+                setLocationName(cityName);
+                localStorage.setItem('prayer-city-id', coords.id);
+                localStorage.setItem('prayer-city-name', cityName);
+                return;
               }
             }
-            
-            setCityId(nearestCity.id);
-            setLocationName(nearestCity.nama);
+          } catch (geoError) {
+            console.log("Reverse geocoding failed, using distance calculation");
           }
+          
+          // Fallback: Find nearest city using Haversine formula
+          let nearestCity = { id: "1301", nama: "Jakarta" };
+          let minDistance = Infinity;
+          
+          for (const [cityName, coords] of Object.entries(cityCoords)) {
+            const distance = calculateDistance(latitude, longitude, coords.lat, coords.lon);
+            
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestCity = { id: coords.id, nama: cityName };
+            }
+          }
+          
+          setCityId(nearestCity.id);
+          setLocationName(nearestCity.nama);
+          localStorage.setItem('prayer-city-id', nearestCity.id);
+          localStorage.setItem('prayer-city-name', nearestCity.nama);
+          
         } catch (error) {
           console.log("Geolocation denied or error, using default Jakarta:", error);
-          // Keep default Jakarta
           setCityId("1301");
           setLocationName("Jakarta");
         }
@@ -430,6 +470,34 @@ export default function TrackerSection() {
   const completedCount = todos.filter(t => t.completed).length;
   const progressPercentage = (completedCount / todos.length) * 100;
 
+  // Function to manually change city
+  const changeCity = (newCityId: string, newCityName: string) => {
+    setCityId(newCityId);
+    setLocationName(newCityName);
+    localStorage.setItem('prayer-city-id', newCityId);
+    localStorage.setItem('prayer-city-name', newCityName);
+    setShowCityModal(false);
+    setIsLoadingPrayer(true);
+  };
+
+  // Available cities
+  const availableCities = [
+    { id: "1204", name: "Bandung" },
+    { id: "1301", name: "Jakarta" },
+    { id: "1403", name: "Surabaya" },
+    { id: "0219", name: "Medan" },
+    { id: "1308", name: "Semarang" },
+    { id: "1671", name: "Makassar" },
+    { id: "1601", name: "Palembang" },
+    { id: "1371", name: "Tangerang" },
+    { id: "1277", name: "Depok" },
+    { id: "1275", name: "Bekasi" },
+    { id: "1209", name: "Bogor" },
+    { id: "1401", name: "Yogyakarta" },
+    { id: "1318", name: "Malang" },
+    { id: "1701", name: "Denpasar" },
+  ];
+
   return (
     <div className="min-h-screen p-4 md:p-8 lg:p-16 pb-32">
       <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
@@ -460,9 +528,9 @@ export default function TrackerSection() {
             <div className="text-right">
               <div className="flex items-center gap-2 justify-end">
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={() => setShowCityModal(true)}
                   className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                  title="Refresh lokasi"
+                  title="Ubah lokasi"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -815,6 +883,56 @@ export default function TrackerSection() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* City Selection Modal */}
+        {showCityModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900">Pilih Lokasi</h3>
+                <button
+                  onClick={() => setShowCityModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4">
+                Pilih kota untuk mendapatkan jadwal sholat yang akurat
+              </p>
+
+              <div className="space-y-2">
+                {availableCities.map((city) => (
+                  <button
+                    key={city.id}
+                    onClick={() => changeCity(city.id, city.name)}
+                    className={`w-full text-left px-4 py-3 rounded-xl transition-all ${
+                      cityId === city.id
+                        ? 'bg-primary-green text-white shadow-md'
+                        : 'bg-gray-50 hover:bg-gray-100 text-gray-900'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{city.name}</span>
+                      {cityId === city.id && (
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </motion.div>
           </div>
         )}
