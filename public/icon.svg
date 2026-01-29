@@ -1,0 +1,17 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#019147"/>
+  
+  <!-- Crescent Moon -->
+  <path d="M256 96C203.2 96 160 139.2 160 192C160 244.8 203.2 288 256 288C268.8 288 281.2 285.6 292.8 281.2C275.2 268 264 246.4 264 222C264 181.6 296.8 148.8 337.2 148.8C345.6 148.8 353.6 150.4 361.2 153.2C344.8 118.4 303.2 96 256 96Z" fill="white"/>
+  
+  <!-- Star -->
+  <path d="M380 140L388 164L412 172L388 180L380 204L372 180L348 172L372 164L380 140Z" fill="#FF9822"/>
+  
+  <!-- Mosque Silhouette -->
+  <path d="M256 320C238.4 320 224 334.4 224 352V416H288V352C288 334.4 273.6 320 256 320Z" fill="white" opacity="0.9"/>
+  <circle cx="256" cy="308" r="12" fill="white" opacity="0.9"/>
+  <path d="M200 352H312V368H200V352Z" fill="white" opacity="0.9"/>
+  <path d="M192 368H320V416H192V368Z" fill="white" opacity="0.9"/>
+  <path d="M176 416H336V432H176V416Z" fill="white" opacity="0.9"/>
+</svg>
