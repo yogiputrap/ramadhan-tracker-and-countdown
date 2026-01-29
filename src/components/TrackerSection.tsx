@@ -503,9 +503,9 @@ export default function TrackerSection() {
       <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
           className="text-center mb-6 md:mb-8"
         >
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
@@ -518,9 +518,9 @@ export default function TrackerSection() {
 
         {/* Prayer Times Card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
           className="bg-gradient-to-br from-primary-green to-primary-green/90 rounded-2xl md:rounded-3xl p-5 md:p-8 shadow-card text-white"
         >
           <div className="flex items-center justify-between mb-5 md:mb-6">
@@ -555,14 +555,14 @@ export default function TrackerSection() {
           ) : (
             <div className="grid grid-cols-2 gap-2.5 md:gap-4">
             {prayerTimes.map((prayer, index) => (
-              <motion.div
+              <div
                 key={prayer.name}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.2 + index * 0.05 }}
-                className={`bg-white/10 backdrop-blur-sm rounded-xl p-3.5 md:p-5 hover:bg-white/20 transition-all duration-300 ${
+                className={`bg-white/10 backdrop-blur-sm rounded-xl p-3.5 md:p-5 hover:bg-white/20 transition-colors duration-200 ${
                   index === 4 ? 'col-span-2 md:col-span-1' : ''
                 }`}
+                style={{ 
+                  animation: `fadeIn 0.3s ease-out ${0.1 + index * 0.03}s both`
+                }}
               >
                 <div className="flex items-center gap-3 md:flex-col md:text-center md:gap-2">
                   <div className="flex-shrink-0">
@@ -573,7 +573,7 @@ export default function TrackerSection() {
                     <p className="text-xl md:text-2xl font-bold">{prayer.time}</p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
           )}
@@ -582,9 +582,9 @@ export default function TrackerSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Calendar Card */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
             className="bg-white rounded-2xl md:rounded-3xl p-5 md:p-6 shadow-card"
           >
             <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-4">
@@ -620,9 +620,9 @@ export default function TrackerSection() {
 
           {/* Progress Card */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
             className="bg-white rounded-2xl md:rounded-3xl p-5 md:p-6 shadow-card"
           >
             <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-4">
@@ -635,11 +635,9 @@ export default function TrackerSection() {
                 <span className="text-sm font-bold text-primary-green">{completedCount}/{todos.length}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPercentage}%` }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                  className="bg-gradient-to-r from-primary-green to-accent-orange h-full rounded-full"
+                <div
+                  className="bg-gradient-to-r from-primary-green to-accent-orange h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${progressPercentage}%` }}
                 />
               </div>
             </div>
@@ -688,16 +686,16 @@ export default function TrackerSection() {
           
           <div className="space-y-3 md:space-y-4">
             {todos.map((todo, index) => (
-              <motion.div
+              <div
                 key={todo.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.5 + index * 0.05 }}
-                className={`relative flex items-start gap-3 md:gap-4 p-4 md:p-5 rounded-xl border-2 transition-all duration-300 ${
+                className={`relative flex items-start gap-3 md:gap-4 p-4 md:p-5 rounded-xl border-2 transition-colors duration-200 ${
                   todo.completed
                     ? "bg-primary-green/5 border-primary-green/20"
                     : "bg-gray-50 border-gray-200 hover:border-primary-green/30"
                 }`}
+                style={{ 
+                  animation: `fadeIn 0.3s ease-out ${0.1 + index * 0.02}s both`
+                }}
               >
                 <div 
                   className="flex-shrink-0 mt-0.5 cursor-pointer"
@@ -786,7 +784,7 @@ export default function TrackerSection() {
                     </>
                   )}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
@@ -892,11 +890,12 @@ export default function TrackerSection() {
 
         {/* City Selection Modal */}
         {showCityModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-[60]">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-[60]" style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <motion.div
-              initial={{ opacity: 0, y: 100 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-t-3xl md:rounded-3xl p-5 md:p-6 w-full md:max-w-sm max-h-[70vh] md:max-h-[80vh] overflow-y-auto shadow-2xl"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="bg-white rounded-t-3xl md:rounded-3xl p-5 md:p-6 w-full md:max-w-sm max-h-[70vh] md:max-h-[80vh] overflow-y-auto shadow-2xl will-change-transform"
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg md:text-xl font-bold text-gray-900">Pilih Lokasi</h3>
