@@ -168,9 +168,17 @@ export default function TrackerSection() {
   // Check for celebration when todos change
   useEffect(() => {
     const { completed, total } = getTodayProgress(todos);
+    const today = getTodayString();
+    const celebrationKey = `celebration-shown-${today}`;
+    const alreadyShown = localStorage.getItem(celebrationKey);
     
-    if (total > 0 && completed === total && completed > 0) {
+    // Only show celebration if:
+    // 1. All tasks completed today
+    // 2. Not already shown today
+    // 3. Has at least 1 task
+    if (total > 0 && completed === total && completed > 0 && !alreadyShown) {
       setShowCelebration(true);
+      localStorage.setItem(celebrationKey, 'true');
       setTimeout(() => setShowCelebration(false), 4000);
     }
   }, [todos]);
