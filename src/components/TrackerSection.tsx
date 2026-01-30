@@ -2,6 +2,41 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import Confetti from "./Confetti";
+
+// Utility functions
+const getTodayString = (): string => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
+const isTodoVisibleToday = (todo: TodoItem): boolean => {
+  const today = getTodayString();
+  const createdDate = todo.createdDate || today;
+  const repeat = todo.repeat || "daily";
+  
+  if (repeat === "once") {
+    return createdDate === today;
+  } else if (repeat === "daily") {
+    return createdDate <= today;
+  } else if (repeat === "weekly") {
+    const created = new Date(createdDate);
+    const todayDate = new Date(today);
+    return created.getDay() === todayDate.getDay() && createdDate <= today;
+  }
+  
+  return false;
+};
+
+const getTodayProgress = (todos: TodoItem[]): { completed: number; total: number; percentage: number } => {
+  const today = getTodayString();
+  const todayTodos = todos.filter(isTodoVisibleToday);
+  const completed = todayTodos.filter(todo => (todo.completedDates || []).includes(today)).length;
+  const total = todayTodos.length;
+  const percentage = total > 0 ? (completed / total) * 100 : 0;
+  
+  return { completed, total, percentage };
+};
 
 interface PrayerTime {
   name: string;
@@ -9,17 +44,7 @@ interface PrayerTime {
   icon: JSX.Element;
 }
 
-interface PrayerTimesAPI {
-  tanggal: string;
-  imsak: string;
-  subuh: string;
-  terbit: string;
-  dhuha: string;
-  dzuhur: string;
-  ashar: string;
-  maghrib: string;
-  isya: string;
-}
+type RepeatType = "once" | "daily" | "weekly";
 
 interface TodoItem {
   id: string;
@@ -27,13 +52,16 @@ interface TodoItem {
   description: string;
   completed: boolean;
   category: "preparation" | "daily" | "special";
+  repeat?: RepeatType;
+  createdDate?: string;
+  completedDates?: string[];
 }
 
 export default function TrackerSection() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCityModal, setShowCityModal] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [editingTodo, setEditingTodo] = useState<TodoItem | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
@@ -43,7 +71,8 @@ export default function TrackerSection() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "daily" as "preparation" | "daily" | "special"
+    category: "daily" as "preparation" | "daily" | "special",
+    repeat: "daily" as RepeatType
   });
   const [todos, setTodos] = useState<TodoItem[]>([]);
 
@@ -52,14 +81,20 @@ export default function TrackerSection() {
     const savedTodos = localStorage.getItem('ramadhan-todos');
     if (savedTodos) {
       try {
-        setTodos(JSON.parse(savedTodos));
+        const parsed = JSON.parse(savedTodos);
+        // Migrate old todos to new structure
+        const migrated = parsed.map((todo: TodoItem) => ({
+          ...todo,
+          repeat: todo.repeat || "daily",
+          createdDate: todo.createdDate || getTodayString(),
+          completedDates: todo.completedDates || (todo.completed ? [getTodayString()] : [])
+        }));
+        setTodos(migrated);
       } catch (error) {
         console.error('Error loading todos from localStorage:', error);
-        // Set default todos if parsing fails
         setDefaultTodos();
       }
     } else {
-      // Set default todos if nothing in localStorage
       setDefaultTodos();
     }
   }, []);
@@ -71,49 +106,78 @@ export default function TrackerSection() {
     }
   }, [todos]);
 
+  // Check for celebration when todos change
+  useEffect(() => {
+    const { completed, total } = getTodayProgress(todos);
+    
+    if (total > 0 && completed === total && completed > 0) {
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 4000);
+    }
+  }, [todos]);
+
   const setDefaultTodos = () => {
+    const today = getTodayString();
     const defaultTodos: TodoItem[] = [
       {
         id: "1",
         title: "Takjil Shopping",
         description: "Belanja bahan untuk takjil minggu ini",
         completed: false,
-        category: "preparation"
+        category: "preparation",
+        repeat: "once",
+        createdDate: today,
+        completedDates: []
       },
       {
         id: "2",
         title: "Sharing Takjil at Masjid Agung",
         description: "Berbagi takjil di masjid untuk jamaah",
         completed: false,
-        category: "daily"
+        category: "daily",
+        repeat: "daily",
+        createdDate: today,
+        completedDates: []
       },
       {
         id: "3",
         title: "Tahajjud Preparation",
         description: "Persiapan bangun untuk sholat tahajjud",
         completed: false,
-        category: "daily"
+        category: "daily",
+        repeat: "daily",
+        createdDate: today,
+        completedDates: []
       },
       {
         id: "4",
         title: "Tilawah Al-Quran",
         description: "Membaca 1 juz Al-Quran hari ini",
         completed: false,
-        category: "daily"
+        category: "daily",
+        repeat: "daily",
+        createdDate: today,
+        completedDates: []
       },
       {
         id: "5",
         title: "Sedekah Jumat",
         description: "Menyisihkan sedekah untuk hari Jumat",
         completed: false,
-        category: "special"
+        category: "special",
+        repeat: "weekly",
+        createdDate: today,
+        completedDates: []
       },
       {
         id: "6",
         title: "Kajian Ramadhan",
         description: "Menghadiri kajian malam di masjid",
         completed: false,
-        category: "special"
+        category: "special",
+        repeat: "once",
+        createdDate: today,
+        completedDates: []
       }
     ];
     setTodos(defaultTodos);
@@ -395,16 +459,39 @@ export default function TrackerSection() {
   }
 
   const toggleTodo = (id: string) => {
-    setTodos(todos.map(todo => 
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+    const today = getTodayString();
+    
+    setTodos(todos.map(todo => {
+      if (todo.id === id) {
+        const completedDates = todo.completedDates || [];
+        const isCompletedToday = completedDates.includes(today);
+        
+        if (isCompletedToday) {
+          // Uncheck: remove today from completedDates
+          return {
+            ...todo,
+            completed: false,
+            completedDates: completedDates.filter(d => d !== today)
+          };
+        } else {
+          // Check: add today to completedDates
+          return {
+            ...todo,
+            completed: true,
+            completedDates: [...completedDates, today]
+          };
+        }
+      }
+      return todo;
+    }));
   };
 
   const openAddModal = () => {
     setFormData({
       title: "",
       description: "",
-      category: "daily"
+      category: "daily",
+      repeat: "daily"
     });
     setEditingTodo(null);
     setShowAddModal(true);
@@ -414,7 +501,8 @@ export default function TrackerSection() {
     setFormData({
       title: todo.title,
       description: todo.description,
-      category: todo.category
+      category: todo.category,
+      repeat: todo.repeat || "daily"
     });
     setEditingTodo(todo);
     setShowAddModal(true);
@@ -427,7 +515,8 @@ export default function TrackerSection() {
     setFormData({
       title: "",
       description: "",
-      category: "daily"
+      category: "daily",
+      repeat: "daily"
     });
   };
 
@@ -440,7 +529,13 @@ export default function TrackerSection() {
       // Edit existing todo
       setTodos(todos.map(todo =>
         todo.id === editingTodo.id
-          ? { ...todo, ...formData }
+          ? { 
+              ...todo, 
+              ...formData,
+              // Keep existing dates when editing
+              createdDate: todo.createdDate,
+              completedDates: todo.completedDates
+            }
           : todo
       ));
     } else {
@@ -448,7 +543,9 @@ export default function TrackerSection() {
       const newTodo: TodoItem = {
         id: Date.now().toString(),
         ...formData,
-        completed: false
+        completed: false,
+        createdDate: getTodayString(),
+        completedDates: []
       };
       setTodos([...todos, newTodo]);
     }
@@ -467,8 +564,11 @@ export default function TrackerSection() {
     setOpenMenuId(openMenuId === id ? null : id);
   };
 
-  const completedCount = todos.filter(t => t.completed).length;
-  const progressPercentage = (completedCount / todos.length) * 100;
+  // Calculate today's progress
+  const { completed: completedCount, total: totalCount, percentage: progressPercentage } = getTodayProgress(todos);
+  
+  // Filter todos for today
+  const todayTodos = todos.filter(isTodoVisibleToday);
 
   // Function to manually change city
   const changeCity = (newCityId: string, newCityName: string) => {
@@ -603,7 +703,7 @@ export default function TrackerSection() {
               {calendarDays.map((day, index) => (
                 <button
                   key={index}
-                  onClick={() => day && setSelectedDate(new Date(year, month, day))}
+                  onClick={() => {/* Calendar date click - can be used for future features */}}
                   className={`text-center py-2 md:py-3 rounded-lg text-xs md:text-sm transition-all duration-200 ${
                     day === today
                       ? "bg-primary-green text-white font-bold shadow-md"
@@ -632,7 +732,7 @@ export default function TrackerSection() {
             <div className="mb-6">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-600">Aktivitas Selesai</span>
-                <span className="text-sm font-bold text-primary-green">{completedCount}/{todos.length}</span>
+                <span className="text-sm font-bold text-primary-green">{completedCount}/{totalCount}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                 <div
@@ -640,6 +740,11 @@ export default function TrackerSection() {
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
+              {totalCount > 0 && completedCount === totalCount && (
+                <p className="text-xs text-primary-green font-semibold mt-2 text-center">
+                  🎉 Alhamdulillah! Semua aktivitas hari ini selesai!
+                </p>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -685,11 +790,15 @@ export default function TrackerSection() {
           </div>
           
           <div className="space-y-3 md:space-y-4">
-            {todos.map((todo, index) => (
+            {todayTodos.map((todo, index) => {
+              const today = getTodayString();
+              const isCompletedToday = (todo.completedDates || []).includes(today);
+              
+              return (
               <div
                 key={todo.id}
                 className={`relative flex items-start gap-3 md:gap-4 p-4 md:p-5 rounded-xl border-2 transition-colors duration-200 ${
-                  todo.completed
+                  isCompletedToday
                     ? "bg-primary-green/5 border-primary-green/20"
                     : "bg-gray-50 border-gray-200 hover:border-primary-green/30"
                 }`}
@@ -702,11 +811,11 @@ export default function TrackerSection() {
                   onClick={() => toggleTodo(todo.id)}
                 >
                   <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                    todo.completed
+                    isCompletedToday
                       ? "bg-primary-green border-primary-green"
                       : "border-gray-300 hover:border-primary-green"
                   }`}>
-                    {todo.completed && (
+                    {isCompletedToday && (
                       <svg className="w-3 h-3 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
@@ -717,13 +826,13 @@ export default function TrackerSection() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <h4 className={`text-sm md:text-base font-semibold ${
-                      todo.completed ? "text-gray-500 line-through" : "text-gray-900"
+                      isCompletedToday ? "text-gray-500 line-through" : "text-gray-900"
                     }`}>
                       {todo.title}
                     </h4>
                   </div>
                   <p className={`text-xs md:text-sm mb-2 ${
-                    todo.completed ? "text-gray-400" : "text-gray-600"
+                    isCompletedToday ? "text-gray-400" : "text-gray-600"
                   }`}>
                     {todo.description}
                   </p>
@@ -785,12 +894,13 @@ export default function TrackerSection() {
                   )}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
 
-          {todos.length === 0 && (
+          {todayTodos.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">Belum ada aktivitas</p>
+              <p className="text-gray-500 mb-4">Belum ada aktivitas untuk hari ini</p>
               <button
                 onClick={openAddModal}
                 className="text-primary-green font-medium hover:underline"
@@ -868,6 +978,26 @@ export default function TrackerSection() {
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pengulangan
+                  </label>
+                  <select
+                    value={formData.repeat}
+                    onChange={(e) => setFormData({ ...formData, repeat: e.target.value as RepeatType })}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary-green focus:outline-none transition-colors"
+                  >
+                    <option value="once">Hari Ini Saja</option>
+                    <option value="daily">Setiap Hari</option>
+                    <option value="weekly">Setiap Minggu</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.repeat === "once" && "Task hanya muncul hari ini"}
+                    {formData.repeat === "daily" && "Task muncul setiap hari"}
+                    {formData.repeat === "weekly" && "Task muncul setiap minggu di hari yang sama"}
+                  </p>
+                </div>
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
@@ -942,6 +1072,32 @@ export default function TrackerSection() {
               </div>
             </motion.div>
           </div>
+        )}
+
+        {/* Celebration Modal */}
+        {showCelebration && (
+          <>
+            <Confetti />
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.5, opacity: 0 }}
+                className="bg-white rounded-3xl p-8 md:p-12 text-center max-w-sm mx-4 shadow-2xl"
+              >
+                <div className="text-7xl md:text-8xl mb-4 animate-bounce">🎉</div>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+                  Alhamdulillah!
+                </h2>
+                <p className="text-gray-600 text-base md:text-lg mb-2">
+                  Semua aktivitas hari ini sudah selesai!
+                </p>
+                <p className="text-sm text-gray-500">
+                  Semoga Allah menerima amal ibadah kita 🤲
+                </p>
+              </motion.div>
+            </div>
+          </>
         )}
       </div>
     </div>

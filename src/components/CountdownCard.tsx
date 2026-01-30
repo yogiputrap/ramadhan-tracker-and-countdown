@@ -34,9 +34,12 @@ export default function CountdownCard({
         </div>
       </div>
       
-      <div className="text-center flex-1 flex items-center justify-center py-4">
-        <p className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900">
+      <div className="text-center flex-1 flex flex-col items-center justify-center py-4 pb-1">
+        <p className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-1">
           In {days} days
+        </p>
+        <p className="mt-6 text-sm md:text-base text-gray-600 max-w-md px-4">
+          Ramadan 1447H will, inshaAllah, be coming on February 18, 2026
         </p>
       </div>
     </motion.div>
