@@ -10,6 +10,10 @@ const getTodayString = (): string => {
   return today.toISOString().split('T')[0];
 };
 
+const getDateString = (date: Date): string => {
+  return date.toISOString().split('T')[0];
+};
+
 const isTodoVisibleToday = (todo: TodoItem): boolean => {
   const today = getTodayString();
   const createdDate = todo.createdDate || today;
@@ -26,6 +30,61 @@ const isTodoVisibleToday = (todo: TodoItem): boolean => {
   }
   
   return false;
+};
+
+const getTodosForDate = (todos: TodoItem[], dateString: string): TodoItem[] => {
+  return todos.filter(todo => {
+    const createdDate = todo.createdDate || getTodayString();
+    const repeat = todo.repeat || "daily";
+    
+    if (repeat === "once") {
+      return createdDate === dateString;
+    } else if (repeat === "daily") {
+      return createdDate <= dateString;
+    } else if (repeat === "weekly") {
+      const created = new Date(createdDate);
+      const checkDate = new Date(dateString);
+      return created.getDay() === checkDate.getDay() && createdDate <= dateString;
+    }
+    
+    return false;
+  });
+};
+
+const isDateFullyCompleted = (todos: TodoItem[], dateString: string): boolean => {
+  const todosForDate = getTodosForDate(todos, dateString);
+  if (todosForDate.length === 0) return false;
+  
+  const completedCount = todosForDate.filter(todo => 
+    (todo.completedDates || []).includes(dateString)
+  ).length;
+  
+  return completedCount === todosForDate.length;
+};
+
+const getCurrentStreak = (todos: TodoItem[]): number => {
+  let streak = 0;
+  const today = new Date();
+  
+  // Start from yesterday and go backwards
+  for (let i = 1; i <= 30; i++) {
+    const checkDate = new Date(today);
+    checkDate.setDate(today.getDate() - i);
+    const dateString = getDateString(checkDate);
+    
+    if (isDateFullyCompleted(todos, dateString)) {
+      streak++;
+    } else {
+      break; // Streak broken
+    }
+  }
+  
+  // Check if today is also completed
+  if (isDateFullyCompleted(todos, getTodayString())) {
+    streak++;
+  }
+  
+  return streak;
 };
 
 const getTodayProgress = (todos: TodoItem[]): { completed: number; total: number; percentage: number } => {
@@ -569,6 +628,9 @@ export default function TrackerSection() {
   
   // Filter todos for today
   const todayTodos = todos.filter(isTodoVisibleToday);
+  
+  // Calculate current streak
+  const currentStreak = getCurrentStreak(todos);
 
   // Function to manually change city
   const changeCity = (newCityId: string, newCityName: string) => {
@@ -700,21 +762,51 @@ export default function TrackerSection() {
             </div>
             
             <div className="grid grid-cols-7 gap-1 md:gap-2">
-              {calendarDays.map((day, index) => (
-                <button
-                  key={index}
-                  onClick={() => {/* Calendar date click - can be used for future features */}}
-                  className={`text-center py-2 md:py-3 rounded-lg text-xs md:text-sm transition-all duration-200 ${
-                    day === today
-                      ? "bg-primary-green text-white font-bold shadow-md"
-                      : day === null
-                      ? "text-transparent cursor-default"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {day || "-"}
-                </button>
-              ))}
+              {calendarDays.map((day, index) => {
+                if (day === null) {
+                  return (
+                    <div key={index} className="text-transparent cursor-default">-</div>
+                  );
+                }
+                
+                // Create date string for this day
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isCompleted = isDateFullyCompleted(todos, dateString);
+                const isToday = day === today;
+                
+                return (
+                  <button
+                    key={index}
+                    onClick={() => {/* Calendar date click - can be used for future features */}}
+                    className={`relative text-center py-2 md:py-3 rounded-lg text-xs md:text-sm transition-all duration-200 ${
+                      isToday
+                        ? "bg-primary-green text-white font-bold shadow-md"
+                        : isCompleted
+                        ? "bg-primary-green/20 text-primary-green font-semibold border-2 border-primary-green/40"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {day}
+                    {isCompleted && !isToday && (
+                      <span className="absolute top-0.5 right-0.5 text-[10px]">✓</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            
+            {/* Calendar Legend */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex flex-wrap gap-3 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 rounded bg-primary-green"></div>
+                  <span className="text-gray-600">Hari Ini</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-4 rounded bg-primary-green/20 border-2 border-primary-green/40"></div>
+                  <span className="text-gray-600">Selesai Semua</span>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -752,16 +844,25 @@ export default function TrackerSection() {
                 <div className="text-2xl">🎯</div>
                 <div className="flex-1">
                   <p className="text-xs text-gray-500">Target Harian</p>
-                  <p className="text-sm font-semibold text-gray-900">6 Aktivitas</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {totalCount} Aktivitas
+                  </p>
                 </div>
               </div>
               
               <div className="flex items-center gap-3 p-3 bg-accent-orange/5 rounded-xl">
-                <div className="text-2xl">⭐</div>
+                <div className="text-2xl">{currentStreak > 0 ? '🔥' : '⭐'}</div>
                 <div className="flex-1">
                   <p className="text-xs text-gray-500">Streak</p>
-                  <p className="text-sm font-semibold text-gray-900">7 Hari Berturut-turut</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {currentStreak > 0 
+                      ? `${currentStreak} Hari Berturut-turut` 
+                      : 'Belum ada streak'}
+                  </p>
                 </div>
+                {currentStreak >= 7 && (
+                  <div className="text-xl">🏆</div>
+                )}
               </div>
             </div>
           </motion.div>
