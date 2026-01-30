@@ -92,6 +92,54 @@ const doaList: Doa[] = [
     latin: "Rabbana taqabbal minna innaka antas-sami'ul 'alim wa tub 'alayna innaka antat-tawwabur-rahim",
     translation: "Ya Tuhan kami, terimalah amal kami, sesungguhnya Engkau Maha Mendengar lagi Maha Mengetahui, dan terimalah taubat kami, sesungguhnya Engkau Maha Penerima Taubat lagi Maha Penyayang.",
     category: "Setelah Tarawih"
+  },
+  {
+    id: "11",
+    title: "Niat Zakat Fitrah untuk Diri Sendiri",
+    arabic: "نَوَيْتُ أَنْ أُخْرِجَ زَكَاةَ الْفِطْرِ عَنْ نَفْسِيْ فَرْضًا لِلّٰهِ تَعَالَى",
+    latin: "Nawaitu an ukhrija zakaatal fithri 'an nafsii fardhan lillaahi ta'aalaa",
+    translation: "Aku niat mengeluarkan zakat fitrah untuk diriku sendiri, fardu karena Allah Ta'ala.",
+    category: "Zakat & Sedekah"
+  },
+  {
+    id: "12",
+    title: "Niat Zakat Fitrah untuk Diri Sendiri dan Keluarga",
+    arabic: "نَوَيْتُ أَنْ أُخْرِجَ زَكَاةَ الْفِطْرِ عَنِّيْ وَعَنْ جَمِيْعِ مَا يَلْزَمُنِيْ نَفَقَتُهُمْ شَرْعًا فَرْضًا لِلّٰهِ تَعَالَى",
+    latin: "Nawaitu an ukhrija zakaatal fithri 'annii wa 'an jamii'i maa yalzamunii nafaqatuhum syar'an fardhan lillaahi ta'aalaa",
+    translation: "Aku niat mengeluarkan zakat fitrah untuk diriku dan seluruh orang yang wajib aku nafkahi secara syariat, fardu karena Allah Ta'ala.",
+    category: "Zakat & Sedekah"
+  },
+  {
+    id: "13",
+    title: "Doa Saat Menyerahkan Zakat",
+    arabic: "اَللّٰهُمَّ اجْعَلْهَا مَغْنَمًا وَلَا تَجْعَلْهَا مَغْرَمًا",
+    latin: "Allahummaj'alhaa maghnaman wa laa taj'alhaa maghramaa",
+    translation: "Ya Allah, jadikanlah zakat ini sebagai keberuntungan dan jangan jadikan zakat ini sebagai kerugian.",
+    category: "Zakat & Sedekah"
+  },
+  {
+    id: "14",
+    title: "Doa Menerima Zakat",
+    arabic: "آجَرَكَ اللّٰهُ فِيْمَا أَعْطَيْتَ، وَبَارَكَ لَكَ فِيْمَا أَبْقَيْتَ، وَجَعَلَهُ لَكَ طَهُوْرًا",
+    latin: "Ajarakallahu fima a'thaita, wa baraka laka fima abqaita, wa ja'alahu laka thahura",
+    translation: "Semoga Allah memberimu pahala atas apa yang telah engkau berikan, memberkahimu dalam apa yang engkau simpan, dan menjadikannya sebagai pembersih bagimu.",
+    category: "Zakat & Sedekah"
+  },
+  {
+    id: "15",
+    title: "Doa Setelah Bersedekah",
+    arabic: "اَللّٰهُمَّ تَقَبَّلْ مِنِّيْ وَاجْعَلْهُ ذُخْرًا لِيْ عِنْدَكَ يَوْمَ الْقِيَامَةِ",
+    latin: "Allahumma taqabbal minni waj'alhu dzukhran li 'indaka yaumal qiyamah",
+    translation: "Ya Allah, terimalah dariku dan jadikanlah ia sebagai simpanan bagiku di sisi-Mu pada hari kiamat.",
+    category: "Zakat & Sedekah"
+  },
+  {
+    id: "16",
+    title: "Doa Membayar Fidyah",
+    arabic: "اَللّٰهُمَّ إِنِّيْ أُعْطِيْ هٰذِهِ الْفِدْيَةَ عَنْ صَوْمِيْ الَّذِيْ لَمْ أَسْتَطِعْ أَنْ أَصُوْمَهُ، فَتَقَبَّلْهَا مِنِّيْ",
+    latin: "Allahumma inni u'thi hadzihi al-fidyata 'an shaumi alladzii lam astathi' an ashumahu, fataqabbalha minni",
+    translation: "Ya Allah, sesungguhnya aku memberikan fidyah ini sebagai pengganti puasaku yang tidak mampu aku laksanakan, maka terimalah daripadaku.",
+    category: "Zakat & Sedekah"
   }
 ];
 
@@ -101,7 +149,8 @@ const categories = [
   "Niat Puasa & Sahur",
   "Berbuka Puasa",
   "Lailatul Qadar",
-  "Setelah Tarawih"
+  "Setelah Tarawih",
+  "Zakat & Sedekah"
 ];
 
 export default function DoaSection() {
@@ -136,20 +185,22 @@ export default function DoaSection() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="mb-6 md:mb-8"
         >
-          <div className="flex flex-wrap gap-2 md:gap-3 justify-center">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 md:px-5 md:py-2.5 rounded-full text-xs md:text-sm font-medium transition-all duration-300 ${
-                  selectedCategory === category
-                    ? "bg-primary-green text-white shadow-lg scale-105"
-                    : "bg-white text-gray-600 hover:bg-gray-100 shadow-md"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 md:gap-3 pb-2 min-w-max px-1">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 md:px-5 md:py-2.5 rounded-full text-xs md:text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                    selectedCategory === category
+                      ? "bg-primary-green text-white shadow-lg scale-105"
+                      : "bg-white text-gray-600 hover:bg-gray-100 shadow-md"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
         </motion.div>
 

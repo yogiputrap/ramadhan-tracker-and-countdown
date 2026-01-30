@@ -9,7 +9,7 @@ import FloatingNavbar from "@/components/FloatingNavbar";
 import DoaSection from "@/components/DoaSection";
 import TrackerSection from "@/components/TrackerSection";
 import ShareCard from "@/components/ShareCard";
-import QiblaSection from "@/components/QiblaSection";
+import ZakatSection from "@/components/ZakatSection";
 import InstallPrompt from "@/components/InstallPrompt";
 
 export default function Home() {
@@ -23,14 +23,15 @@ export default function Home() {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      // Get current time in Jakarta timezone
-      const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-      const ramadanDate = new Date("2026-02-18T00:00:00");
+      // Get current time
+      const now = new Date();
       
-      // Convert Ramadan date to Jakarta timezone
-      const ramadanJakarta = new Date(ramadanDate.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+      // Set Ramadan date: 18 Februari 2026 00:00:00 WIB (Muhammadiyah)
+      // Note: Kemenag might be 19 February 2026 (perkiraan)
+      const ramadanDate = new Date(2026, 1, 18, 0, 0, 0); // Month is 0-indexed, so 1 = February
       
-      const difference = ramadanJakarta.getTime() - now.getTime();
+      // Calculate exact time difference
+      const difference = ramadanDate.getTime() - now.getTime();
 
       if (difference > 0) {
         setTimeLeft({
@@ -38,6 +39,14 @@ export default function Home() {
           hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
           minutes: Math.floor((difference / 1000 / 60) % 60),
           seconds: Math.floor((difference / 1000) % 60),
+        });
+      } else {
+        // If countdown is over, set to 0
+        setTimeLeft({
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
         });
       }
     };
@@ -94,8 +103,8 @@ export default function Home() {
         <DoaSection />
       ) : activeMenu === "tracker" ? (
         <TrackerSection />
-      ) : activeMenu === "qibla" ? (
-        <QiblaSection />
+      ) : activeMenu === "zakat" ? (
+        <ZakatSection />
       ) : (
         <main className="min-h-screen p-4 md:p-8 lg:p-16 pb-32">
           <div className="max-w-7xl mx-auto">

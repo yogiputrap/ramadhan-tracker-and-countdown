@@ -78,7 +78,7 @@ export default function CalendarCard({ delay = 0 }: CalendarCardProps) {
             key={index}
             className={`text-center py-1.5 md:py-2 rounded-lg text-xs md:text-sm ${
               day === today
-                ? "bg-accent-pink text-white font-bold"
+                ? "bg-primary-green text-white font-bold"
                 : day === null
                 ? "text-transparent"
                 : "text-gray-400"

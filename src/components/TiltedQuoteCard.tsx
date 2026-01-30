@@ -141,25 +141,25 @@ export default function TiltedQuoteCard() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.4 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, delay: 0.15 }}
       className="relative"
     >
-      {/* Background decorative element */}
-      <div className="absolute -inset-4 bg-gradient-to-br from-primary-green/20 to-accent-orange/20 rounded-3xl blur-2xl opacity-50" />
+      {/* Subtle background decorative element */}
+      <div className="absolute -inset-2 bg-gradient-to-br from-primary-green/10 to-accent-orange/10 rounded-2xl md:rounded-3xl blur-xl opacity-40" />
       
-      {/* Main card with tilt effect */}
-      <div className="relative transform hover:scale-[1.02] transition-transform duration-300">
-        <div className="bg-gradient-to-br from-primary-green to-primary-green/90 rounded-3xl p-8 md:p-10 shadow-card hover:shadow-card-hover transition-shadow duration-300 transform rotate-[-0.5deg]">
+      {/* Main card - straight and clean */}
+      <div className="relative hover:scale-[1.01] transition-transform duration-300">
+        <div className="bg-gradient-to-br from-primary-green to-primary-green/90 rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-card hover:shadow-card-hover transition-shadow duration-300">
           {/* Decorative corner elements */}
-          <div className="absolute top-4 right-4 w-16 h-16 border-t-2 border-r-2 border-white/20 rounded-tr-2xl" />
-          <div className="absolute bottom-4 left-4 w-16 h-16 border-b-2 border-l-2 border-white/20 rounded-bl-2xl" />
+          <div className="absolute top-3 right-3 md:top-4 md:right-4 w-12 h-12 md:w-16 md:h-16 border-t-2 border-r-2 border-white/20 rounded-tr-2xl" />
+          <div className="absolute bottom-3 left-3 md:bottom-4 md:left-4 w-12 h-12 md:w-16 md:h-16 border-b-2 border-l-2 border-white/20 rounded-bl-2xl" />
           
           {/* Quote icon */}
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             <svg
-              className="w-12 h-12 text-white/30"
+              className="w-10 h-10 md:w-12 md:h-12 text-white/30"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -169,14 +169,14 @@ export default function TiltedQuoteCard() {
           
           {/* Quote text */}
           <blockquote className="relative z-10">
-            <p className="text-white text-xl md:text-2xl font-medium leading-relaxed mb-6">
+            <p className="text-white text-lg md:text-2xl font-medium leading-relaxed mb-4 md:mb-6">
               "{quote.text}"
             </p>
-            <footer className="flex items-center justify-between">
+            <footer className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
               <cite className="text-white/80 text-sm md:text-base not-italic font-medium">
                 — {quote.author}
               </cite>
-              <div className="flex items-center gap-2 text-white/60 text-sm">
+              <div className="flex items-center gap-2 text-white/60 text-xs md:text-sm">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                 </svg>

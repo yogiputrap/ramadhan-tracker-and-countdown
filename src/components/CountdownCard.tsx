@@ -29,7 +29,7 @@ export default function CountdownCard({
           <p className="text-gray-500 text-xs md:text-sm mb-1">{subtitle}</p>
           <h3 className="text-xl md:text-2xl font-bold text-gray-900 break-words">{title}</h3>
         </div>
-        <div className="bg-accent-pink text-white px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap flex-shrink-0">
+        <div className="bg-primary-green text-white px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-semibold whitespace-nowrap flex-shrink-0">
           {date}
         </div>
       </div>
